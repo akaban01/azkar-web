@@ -606,11 +606,17 @@ window.addEventListener('hashchange', route);
       if (navigator.storage?.persist && !(await navigator.storage.persisted())) {
         navigator.storage.persist().catch(() => {});
       }
+      // The worker precaches audio during install. Wait for it to finish before
+      // checking, otherwise both sides race and fetch the same ~20 MB twice.
+      await navigator.serviceWorker.ready;
     } catch { /* SW unavailable (e.g. file://) — app still works online */ }
   }
 
-  // First run: warm the audio cache in the background.
-  if ('caches' in window && (await cachedCount()) === 0 && navigator.onLine) {
+  // Backstop: cache anything the worker did not get (or if there is no worker).
+  if ('caches' in window && navigator.onLine && (await cachedCount()) < ALL_AUDIO.length) {
     downloadAll(() => {}).then(refreshHomeCta).catch(() => {});
   }
+
+  // The banner was painted before the worker finished precaching, so re-evaluate.
+  refreshHomeCta().catch(() => {});
 })();
