@@ -29,8 +29,8 @@ html, body {
 }
 
 body {
-  font-family: "Segoe UI", "Noto Naskh Arabic", "Traditional Arabic", Tahoma, system-ui, sans-serif;
-  line-height: 1.7;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
   -webkit-text-size-adjust: 100%;
   padding-bottom: calc(env(safe-area-inset-bottom) + 24px);
   overscroll-behavior-y: contain;
@@ -75,8 +75,6 @@ body {
 .icon-btn:active { transform: scale(.94); }
 .icon-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .icon-btn.small svg { width: 18px; height: 18px; }
-/* RTL: the "back" chevron points right visually */
-.icon-btn.back svg { transform: scaleX(-1); }
 
 .offline-bar {
   padding: 7px var(--pad);
@@ -263,22 +261,51 @@ body.player-open .view { padding-bottom: var(--player-h); }
 .texts { margin: 0; padding: 0 0 8px; list-style: none; display: grid; gap: 10px; counter-reset: dhikr; }
 .texts li {
   position: relative;
-  padding: 16px 18px;
+  padding: 14px 18px 16px;
   border: 1px solid var(--line);
   border-radius: 13px;
   background: var(--surface);
-  font-size: 1.22rem;
-  line-height: 2.15;
-  text-align: justify;
 }
 .texts li::before {
   counter-increment: dhikr;
   content: counter(dhikr);
   position: absolute;
-  inset-inline-end: 10px;
-  top: 6px;
+  right: 12px;
+  top: 8px;
   font-size: .68rem;
+  font-variant-numeric: tabular-nums;
   color: var(--fg-dim);
+}
+
+/* The dhikr itself — Arabic, right-to-left, given room to breathe. */
+.dhikr-ar {
+  margin: 0;
+  font-family: "Amiri", "Scheherazade New", "Noto Naskh Arabic", "Traditional Arabic",
+               "Segoe UI", Tahoma, serif;
+  font-size: 1.5rem;
+  line-height: 2.25;
+  text-align: right;
+  color: var(--fg);
+}
+
+/* English instruction above the Arabic. */
+.dhikr-note {
+  margin: 0 0 10px;
+  padding-right: 22px;
+  font-size: .84rem;
+  color: var(--fg-dim);
+}
+.texts li.note-only .dhikr-note { margin-bottom: 0; font-size: .95rem; color: var(--fg); }
+
+.dhikr-repeat {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--a1) 16%, transparent);
+  color: var(--a1);
+  font-size: .72rem;
+  font-weight: 700;
 }
 
 .note {
@@ -360,11 +387,11 @@ body.player-open .view { padding-bottom: var(--player-h); }
 .play-btn::before {
   content: "";
   width: 0; height: 0;
-  /* RTL-safe: triangle pointing left, drawn with borders */
+  /* Triangle pointing toward the reading direction (right in LTR). */
   border-block: 11px solid transparent;
-  border-inline-end: 17px solid currentColor;
-  border-inline-start: 0;
-  margin-inline-end: 3px;
+  border-inline-start: 17px solid currentColor;
+  border-inline-end: 0;
+  margin-inline-start: 3px;
 }
 .play-btn.playing::before {
   width: 16px; height: 18px;

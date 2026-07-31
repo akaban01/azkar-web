@@ -1,9 +1,9 @@
 {
-  "name": "الأذكار — صوتيات بدون إنترنت",
-  "short_name": "الأذكار",
-  "description": "تكبيرات العيد، آية الكرسي، كلمة التوحيد، وأذكار الصباح والمساء — صوت ونص يعملان بدون إنترنت.",
-  "lang": "ar",
-  "dir": "rtl",
+  "name": "Azkar — offline audio",
+  "short_name": "Azkar",
+  "description": "Eid Takbeerat, Ayatul Kursi, the 4th Kalima, and the morning and evening azkar — audio and Arabic text that work fully offline.",
+  "lang": "en",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -18,8 +18,8 @@
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "أذكار الصباح", "url": "./#/azkar-sabah" },
-    { "name": "أذكار المساء", "url": "./#/azkar-masa" },
-    { "name": "آية الكرسي", "url": "./#/ayatul-kursi" }
+    { "name": "Morning Azkar", "url": "./#/azkar-sabah" },
+    { "name": "Evening Azkar", "url": "./#/azkar-masa" },
+    { "name": "Ayatul Kursi", "url": "./#/ayatul-kursi" }
   ]
 }

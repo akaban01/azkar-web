@@ -1,6 +1,6 @@
-import { AZKAR, ALL_AUDIO, toArabicNumerals } from './data.js';
+import { AZKAR, ALL_AUDIO } from './data.js';
 
-const APP_VERSION = '1';
+const APP_VERSION = '2';
 const $ = (id) => document.getElementById(id);
 
 /* =========================================================
@@ -64,12 +64,12 @@ async function idbClear(store) {
    State
    ========================================================= */
 const state = {
-  section: null,        // current category object
-  queue: [],            // array of resolved track objects
+  section: null,
+  queue: [],
   index: 0,
   repeat: false,
   rate: 1,
-  objectUrl: null,      // revocable blob URL for imported audio
+  objectUrl: null,
   importedIds: new Set()
 };
 
@@ -81,14 +81,17 @@ audio.preload = 'metadata';
    ========================================================= */
 function fmtTime(sec) {
   if (!isFinite(sec) || sec < 0) sec = 0;
-  const m = Math.floor(sec / 60);
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
   const s = Math.floor(sec % 60);
-  return toArabicNumerals(m) + ':' + toArabicNumerals(String(s).padStart(2, '0'));
+  return h
+    ? `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    : `${m}:${String(s).padStart(2, '0')}`;
 }
 
 function fmtBytes(bytes) {
-  if (!bytes) return '٠ م.ب';
-  return toArabicNumerals((bytes / 1048576).toFixed(1)) + ' م.ب';
+  if (!bytes) return '0 MB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
 }
 
 let toastTimer;
@@ -97,11 +100,11 @@ function toast(msg) {
   el.textContent = msg;
   el.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { el.hidden = true; }, 2600);
+  toastTimer = setTimeout(() => { el.hidden = true; }, 2800);
 }
 
 /* =========================================================
-   Rendering — home
+   Home
    ========================================================= */
 function renderHome() {
   const wrap = $('cards');
@@ -111,10 +114,10 @@ function renderHome() {
     btn.className = `card accent-${sec.accent}`;
     btn.type = 'button';
 
-    const bundled = sec.tracks.filter((t) => t.src).length;
-    const badge = bundled
-      ? `<span class="card-badge">صوت</span>`
-      : `<span class="card-badge pending">نص</span>`;
+    const n = sec.tracks.filter((t) => t.src).length;
+    const badge = n
+      ? `<span class="card-badge">${n > 1 ? n + ' tracks' : 'Audio'}</span>`
+      : '<span class="card-badge pending">Text</span>';
 
     btn.innerHTML = `
       <span class="card-glyph">${sec.glyph}</span>
@@ -129,7 +132,7 @@ function renderHome() {
 }
 
 /* =========================================================
-   Rendering — detail
+   Detail
    ========================================================= */
 function openSection(id) {
   const sec = AZKAR.find((s) => s.id === id);
@@ -142,33 +145,21 @@ function openSection(id) {
   $('detailSub').textContent = sec.subtitle;
   $('topTitle').textContent = sec.title;
 
-  // Counter
   const cw = $('counterWrap');
   if (sec.counter) {
     cw.hidden = false;
-    $('counterTarget').textContent = `من ${toArabicNumerals(sec.counter)}`;
+    $('counterTarget').textContent = `of ${sec.counter}`;
     loadCounter(sec.id);
   } else {
     cw.hidden = true;
   }
 
-  // Playable check
   const playable = sec.tracks.some((t) => t.src || state.importedIds.has(t.id));
   $('playAllBtn').disabled = !playable;
   $('catDownloadBtn').hidden = !sec.tracks.some((t) => t.src);
 
   renderTracks();
-
-  // Text
-  const note = $('textNote');
-  if (sec.textNote) { note.textContent = sec.textNote; note.hidden = false; } else { note.hidden = true; }
-  const list = $('textList');
-  list.innerHTML = '';
-  for (const t of sec.text) {
-    const li = document.createElement('li');
-    li.textContent = t.body;
-    list.appendChild(li);
-  }
+  renderText(sec);
 
   showView('detail');
   location.hash = '#/' + sec.id;
@@ -190,16 +181,19 @@ function renderTracks() {
     row.disabled = !playable;
     if (playable) row.addEventListener('click', () => playFrom(sec, i));
 
+    const tag = hasImport
+      ? '<span class="track-tag custom">Yours</span>'
+      : (t.src ? (t.sub ? `<span class="track-tag">${t.sub}</span>` : '') : '<span class="track-tag">No audio</span>');
+
     row.innerHTML = `
-      <span class="track-num">${toArabicNumerals(i + 1)}</span>
+      <span class="track-num">${i + 1}</span>
       <span class="track-title">${t.title}</span>
-      ${hasImport ? '<span class="track-tag custom">تسجيلي</span>'
-                  : (t.src ? '' : '<span class="track-tag">لا يوجد صوت</span>')}`;
+      ${tag}`;
 
     const imp = document.createElement('button');
     imp.className = 'track-import';
     imp.type = 'button';
-    imp.textContent = hasImport ? 'استبدال' : 'إضافة صوت';
+    imp.textContent = hasImport ? 'Replace' : 'Add audio';
     imp.addEventListener('click', (e) => { e.stopPropagation(); pickFileFor(t.id); });
 
     li.appendChild(row);
@@ -208,6 +202,45 @@ function renderTracks() {
   });
 
   highlightActive();
+}
+
+function renderText(sec) {
+  const note = $('textNote');
+  if (sec.textNote) { note.textContent = sec.textNote; note.hidden = false; } else { note.hidden = true; }
+
+  const list = $('textList');
+  list.innerHTML = '';
+
+  for (const item of sec.text) {
+    const li = document.createElement('li');
+
+    if (item.note) {
+      const n = document.createElement('p');
+      n.className = 'dhikr-note';
+      n.textContent = item.note;
+      li.appendChild(n);
+    }
+
+    if (item.body) {
+      const ar = document.createElement('p');
+      ar.className = 'dhikr-ar';
+      ar.lang = 'ar';
+      ar.dir = 'rtl';
+      ar.textContent = item.body;
+      li.appendChild(ar);
+    } else {
+      li.classList.add('note-only');
+    }
+
+    if (item.repeat) {
+      const r = document.createElement('span');
+      r.className = 'dhikr-repeat';
+      r.textContent = `Repeat ${item.repeat}×`;
+      li.appendChild(r);
+    }
+
+    list.appendChild(li);
+  }
 }
 
 function highlightActive() {
@@ -227,8 +260,8 @@ function showView(name) {
   $('viewDetail').hidden = name !== 'detail';
   $('viewSettings').hidden = name !== 'settings';
   $('backBtn').hidden = name === 'home';
-  if (name === 'home') $('topTitle').textContent = 'الأذكار';
-  if (name === 'settings') $('topTitle').textContent = 'الإعدادات';
+  if (name === 'home') $('topTitle').textContent = 'Azkar';
+  if (name === 'settings') $('topTitle').textContent = 'Settings';
   window.scrollTo(0, 0);
 }
 
@@ -266,7 +299,7 @@ async function loadCurrent(autoplay) {
   if (!track) return;
 
   const src = await resolveSrc(track);
-  if (!src) { toast('لا يوجد ملف صوتي لهذا المقطع'); return; }
+  if (!src) { toast('No audio for this track yet'); return; }
 
   audio.src = src;
   audio.playbackRate = state.rate;
@@ -274,13 +307,10 @@ async function loadCurrent(autoplay) {
   $('player').hidden = false;
   document.body.classList.add('player-open');
   $('pTitle').textContent = track.title;
-  // Prefer the reciter line; fall back to the section name when a track title
-  // already repeats it (single-track sections).
   $('pSub').textContent = state.section?.subtitle ?? '';
   $('pPrev').disabled = state.queue.length < 2;
   $('pNext').disabled = state.queue.length < 2;
 
-  // Resume where the listener left off (long recitations).
   const saved = await idbGet(STORE_META, 'pos:' + track.id).catch(() => null);
   const restore = typeof saved === 'number' && saved > 5 ? saved : 0;
 
@@ -309,7 +339,7 @@ function updateMediaSession(track) {
   navigator.mediaSession.metadata = new MediaMetadata({
     title: track.title,
     artist: state.section?.subtitle ?? '',
-    album: 'الأذكار',
+    album: 'Azkar',
     artwork: [
       { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
       { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }
@@ -324,7 +354,6 @@ function updateMediaSession(track) {
   h('seekforward', (d) => { audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + (d.seekOffset || 10)); });
 }
 
-/* ---- audio events ---- */
 let seeking = false;
 let lastSave = 0;
 
@@ -351,27 +380,25 @@ audio.addEventListener('ended', () => {
   next();
 });
 audio.addEventListener('error', () => {
-  if (audio.src) toast('تعذّر تشغيل الملف الصوتي');
+  if (audio.src) toast('Could not play this file');
 });
 
 /* =========================================================
-   Offline caching (Cache Storage, driven by the SW)
+   Offline caching
    ========================================================= */
 const AUDIO_CACHE = 'azkar-audio-v1';
 
 async function cachedCount() {
   if (!('caches' in window)) return 0;
   const c = await caches.open(AUDIO_CACHE);
-  const keys = await c.keys();
-  return keys.length;
+  return (await c.keys()).length;
 }
 
 async function cachedBytes() {
   if (!('caches' in window)) return 0;
   const c = await caches.open(AUDIO_CACHE);
-  const keys = await c.keys();
   let total = 0;
-  for (const k of keys) {
+  for (const k of await c.keys()) {
     const r = await c.match(k);
     if (!r) continue;
     try { total += (await r.clone().blob()).size; } catch { /* ignore */ }
@@ -384,12 +411,11 @@ async function downloadAll(onProgress) {
   let done = 0;
   for (const url of ALL_AUDIO) {
     try {
-      const existing = await cache.match(url);
-      if (!existing) {
+      if (!(await cache.match(url))) {
         const res = await fetch(url, { cache: 'reload' });
         if (res.ok) await cache.put(url, res.clone());
       }
-    } catch { /* keep going; report at the end */ }
+    } catch { /* keep going; the count reflects reality afterwards */ }
     done++;
     onProgress?.(done, ALL_AUDIO.length);
   }
@@ -403,35 +429,33 @@ async function refreshHomeCta() {
   if (n >= ALL_AUDIO.length) { cta.hidden = true; return; }
   cta.hidden = false;
   $('storageCtaSub').textContent =
-    n === 0 ? 'لم تُحفَظ بعد' : `${toArabicNumerals(n)} من ${toArabicNumerals(ALL_AUDIO.length)} محفوظة`;
+    n === 0 ? 'Nothing saved yet' : `${n} of ${ALL_AUDIO.length} saved`;
 }
 
 async function refreshSettings() {
   const n = await cachedCount();
-  const bytes = await cachedBytes();
-  $('cacheStat').textContent =
-    `${toArabicNumerals(n)} من ${toArabicNumerals(ALL_AUDIO.length)} ملفًا — ${fmtBytes(bytes)}`;
+  $('cacheStat').textContent = `${n} of ${ALL_AUDIO.length} files — ${fmtBytes(await cachedBytes())}`;
 
   if (navigator.storage?.persisted) {
     const p = await navigator.storage.persisted();
-    $('persistStat').textContent = p ? 'مُفعَّل' : 'غير مُفعَّل';
+    $('persistStat').textContent = p ? 'Enabled' : 'Not enabled';
     $('persistBtn').disabled = p;
-    $('persistBtn').textContent = p ? 'مُفعَّل بالفعل' : 'تفعيل التخزين الدائم';
+    $('persistBtn').textContent = p ? 'Already enabled' : 'Enable persistent storage';
   } else {
-    $('persistStat').textContent = 'غير مدعوم في هذا المتصفح';
+    $('persistStat').textContent = 'Not supported in this browser';
     $('persistBtn').disabled = true;
   }
 
   const keys = await idbKeys(STORE_AUDIO).catch(() => []);
   $('importStat').textContent = keys.length
-    ? `${toArabicNumerals(keys.length)} تسجيلًا`
-    : 'لا توجد تسجيلات مستوردة';
+    ? `${keys.length} file${keys.length > 1 ? 's' : ''}`
+    : 'No imported audio';
 
-  $('verFoot').textContent = `الإصدار ${toArabicNumerals(APP_VERSION)}`;
+  $('verFoot').textContent = `Version ${APP_VERSION}`;
 }
 
 /* =========================================================
-   User audio import
+   Import
    ========================================================= */
 let pendingImportId = null;
 function pickFileFor(trackId) {
@@ -446,24 +470,23 @@ $('filePick').addEventListener('change', async (e) => {
   try {
     await idbSet(STORE_AUDIO, pendingImportId, file);
     state.importedIds.add(pendingImportId);
-    toast('تم حفظ التسجيل في جهازك');
+    toast('Saved to your device');
     if (state.section) { renderTracks(); $('playAllBtn').disabled = false; }
   } catch {
-    toast('تعذّر حفظ الملف');
+    toast('Could not save that file');
   }
   pendingImportId = null;
 });
 
 /* =========================================================
-   Counter (per-section, localStorage)
+   Counter
    ========================================================= */
 function loadCounter(secId) {
-  const v = +(localStorage.getItem('count:' + secId) || 0);
-  paintCounter(v);
+  paintCounter(+(localStorage.getItem('count:' + secId) || 0));
 }
 function paintCounter(v) {
   const target = state.section?.counter ?? 0;
-  $('counterVal').textContent = toArabicNumerals(v);
+  $('counterVal').textContent = String(v);
   $('counterBtn').classList.toggle('done', target > 0 && v >= target);
 }
 $('counterBtn').addEventListener('click', () => {
@@ -477,9 +500,8 @@ $('counterBtn').addEventListener('click', () => {
   if (v === sec.counter && navigator.vibrate) navigator.vibrate(60);
 });
 $('counterReset').addEventListener('click', () => {
-  const sec = state.section;
-  if (!sec) return;
-  localStorage.setItem('count:' + sec.id, '0');
+  if (!state.section) return;
+  localStorage.setItem('count:' + state.section.id, '0');
   paintCounter(0);
 });
 
@@ -488,50 +510,50 @@ $('counterReset').addEventListener('click', () => {
    ========================================================= */
 $('backBtn').addEventListener('click', () => { location.hash = ''; });
 $('settingsBtn').addEventListener('click', () => { location.hash = '#/settings'; });
-
 $('playAllBtn').addEventListener('click', () => playFrom(state.section, 0));
 
 $('catDownloadBtn').addEventListener('click', async (e) => {
   const btn = e.currentTarget;
-  btn.disabled = true;
   const old = btn.textContent;
-  btn.textContent = 'جارٍ الحفظ…';
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
   const cache = await caches.open(AUDIO_CACHE);
-  let ok = 0, fail = 0;
+  let fail = 0;
   for (const t of state.section.tracks) {
     if (!t.src) continue;
     try {
       if (!(await cache.match(t.src))) {
         const r = await fetch(t.src, { cache: 'reload' });
-        if (r.ok) { await cache.put(t.src, r.clone()); ok++; } else fail++;
-      } else ok++;
+        if (r.ok) await cache.put(t.src, r.clone()); else fail++;
+      }
     } catch { fail++; }
   }
   btn.textContent = old;
   btn.disabled = false;
-  toast(fail ? `تعذّر حفظ ${toArabicNumerals(fail)} ملفًا` : 'تم الحفظ للاستماع دون إنترنت');
+  toast(fail ? `${fail} file${fail > 1 ? 's' : ''} could not be saved` : 'Saved for offline listening');
 });
 
-$('ctaDownload').addEventListener('click', () => { location.hash = '#/settings'; setTimeout(() => $('downloadAllBtn').click(), 250); });
+$('ctaDownload').addEventListener('click', () => {
+  location.hash = '#/settings';
+  setTimeout(() => $('downloadAllBtn').click(), 250);
+});
 
 $('downloadAllBtn').addEventListener('click', async () => {
   const btn = $('downloadAllBtn');
   btn.disabled = true;
   $('dlProgressWrap').hidden = false;
-  await downloadAll((done, total) => {
-    $('dlProgress').style.width = (done / total) * 100 + '%';
-  });
+  await downloadAll((done, total) => { $('dlProgress').style.width = (done / total) * 100 + '%'; });
   btn.disabled = false;
   await refreshSettings();
   const n = await cachedCount();
-  toast(n >= ALL_AUDIO.length ? 'تم حفظ كل الصوتيات' : 'حُفظ بعض الملفات فقط — تحقّق من الاتصال');
+  toast(n >= ALL_AUDIO.length ? 'All audio saved' : 'Some files failed — check your connection');
 });
 
 $('clearCacheBtn').addEventListener('click', async () => {
   await caches.delete(AUDIO_CACHE);
   $('dlProgress').style.width = '0%';
   await refreshSettings();
-  toast('تم حذف الصوتيات المحفوظة');
+  toast('Saved audio deleted');
 });
 
 $('clearImportsBtn').addEventListener('click', async () => {
@@ -539,16 +561,15 @@ $('clearImportsBtn').addEventListener('click', async () => {
   state.importedIds.clear();
   await refreshSettings();
   if (state.section) renderTracks();
-  toast('تم حذف التسجيلات المستوردة');
+  toast('Imported audio deleted');
 });
 
 $('persistBtn').addEventListener('click', async () => {
   const granted = await navigator.storage.persist();
-  toast(granted ? 'تم تفعيل التخزين الدائم' : 'رفض المتصفح التفعيل — جرّب تثبيت التطبيق');
+  toast(granted ? 'Persistent storage enabled' : 'Browser declined — try installing the app');
   await refreshSettings();
 });
 
-/* Player controls */
 $('pPlay').addEventListener('click', () => { audio.paused ? audio.play() : audio.pause(); });
 $('pNext').addEventListener('click', next);
 $('pPrev').addEventListener('click', prev);
@@ -565,7 +586,7 @@ $('pRate').addEventListener('click', (e) => {
   const rates = [1, 1.25, 1.5, 0.75];
   state.rate = rates[(rates.indexOf(state.rate) + 1) % rates.length];
   audio.playbackRate = state.rate;
-  e.currentTarget.textContent = toArabicNumerals(String(state.rate)) + '×';
+  e.currentTarget.textContent = state.rate + '×';
 });
 
 const seek = $('seek');
@@ -575,18 +596,15 @@ seek.addEventListener('change', () => {
   seeking = false;
 });
 
-/* Keyboard */
 document.addEventListener('keydown', (e) => {
   if (e.target.matches('input, textarea')) return;
   if (e.code === 'Space' && !$('player').hidden) { e.preventDefault(); audio.paused ? audio.play() : audio.pause(); }
   if (e.key === 'Escape' && $('viewHome').hidden) location.hash = '';
 });
 
-/* Online/offline banner */
 function syncOnline() { $('offlineBar').hidden = navigator.onLine; }
 window.addEventListener('online', syncOnline);
 window.addEventListener('offline', syncOnline);
-
 window.addEventListener('hashchange', route);
 
 /* =========================================================
@@ -602,21 +620,15 @@ window.addEventListener('hashchange', route);
   if ('serviceWorker' in navigator) {
     try {
       await navigator.serviceWorker.register('sw.js');
-      // Ask for persistent storage up front so cached audio is not evicted.
       if (navigator.storage?.persist && !(await navigator.storage.persisted())) {
         navigator.storage.persist().catch(() => {});
       }
-      // The worker precaches audio during install. Wait for it to finish before
-      // checking, otherwise both sides race and fetch the same ~20 MB twice.
+      // The worker precaches during install; waiting avoids both sides racing
+      // to fetch the same files.
       await navigator.serviceWorker.ready;
-    } catch { /* SW unavailable (e.g. file://) — app still works online */ }
+    } catch { /* SW unavailable — app still works online */ }
   }
 
-  // Backstop: cache anything the worker did not get (or if there is no worker).
-  if ('caches' in window && navigator.onLine && (await cachedCount()) < ALL_AUDIO.length) {
-    downloadAll(() => {}).then(refreshHomeCta).catch(() => {});
-  }
-
-  // The banner was painted before the worker finished precaching, so re-evaluate.
+  // The banner was painted before precaching finished, so re-evaluate.
   refreshHomeCta().catch(() => {});
 })();

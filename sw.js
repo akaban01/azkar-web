@@ -4,7 +4,7 @@
      AUDIO_CACHE  — unversioned and never purged on activate, so the ~20 MB of
                     downloaded recitations survive app updates. */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `azkar-shell-${VERSION}`;
 const AUDIO_CACHE = 'azkar-audio-v1';
 
@@ -20,9 +20,13 @@ const SHELL = [
   'icons/icon-512.png'
 ];
 
+// Precached on install. Deliberately excludes the hour-long takbeerat
+// (~70 MB) — that one is fetched on demand. Keep in sync with PRECACHE_AUDIO
+// in data.js.
 const AUDIO = [
   'audio/eid-takbeerat.mp3',
   'audio/ayatul-kursi.mp3',
+  'audio/kalima-tauheed.mp3',
   'audio/azkar-sabah.mp3',
   'audio/azkar-masa.mp3'
 ];
@@ -90,14 +94,19 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // ---- Everything else: stale-while-revalidate. ----
+  // ---- Everything else (JS/CSS/icons): network-first, cache fallback. ----
+  // Stale-while-revalidate would be faster, but it can pair a freshly deployed
+  // index.html with a stale app.js for one load. These files are small, and
+  // the cache still covers the offline case.
   event.respondWith((async () => {
     const cache = await caches.open(SHELL_CACHE);
-    const hit = await cache.match(req);
-    const net = fetch(req)
-      .then((res) => { if (res.ok) cache.put(req, res.clone()); return res; })
-      .catch(() => null);
-    return hit || (await net) || Response.error();
+    try {
+      const fresh = await fetch(req);
+      if (fresh.ok) cache.put(req, fresh.clone());
+      return fresh;
+    } catch {
+      return (await cache.match(req)) || Response.error();
+    }
   })());
 });
 
