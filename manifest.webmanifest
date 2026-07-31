@@ -1,0 +1,25 @@
+{
+  "name": "الأذكار — صوتيات بدون إنترنت",
+  "short_name": "الأذكار",
+  "description": "تكبيرات العيد، آية الكرسي، كلمة التوحيد، وأذكار الصباح والمساء — صوت ونص يعملان بدون إنترنت.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0f14",
+  "theme_color": "#0b0f14",
+  "categories": ["lifestyle", "education", "music"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "أذكار الصباح", "url": "./#/azkar-sabah" },
+    { "name": "أذكار المساء", "url": "./#/azkar-masa" },
+    { "name": "آية الكرسي", "url": "./#/ayatul-kursi" }
+  ]
+}

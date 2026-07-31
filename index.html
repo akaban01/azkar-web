@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>الأذكار</title>
+<meta name="description" content="تطبيق الأذكار الصوتية — يعمل بدون إنترنت">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الأذكار">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <button id="backBtn" class="icon-btn back" hidden aria-label="رجوع">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+  </button>
+  <h1 id="topTitle">الأذكار</h1>
+  <button id="settingsBtn" class="icon-btn" aria-label="الإعدادات والتخزين">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="3.4"/></svg>
+  </button>
+</header>
+
+<div id="offlineBar" class="offline-bar" hidden>وضع عدم الاتصال — يُشغَّل من التخزين المحلي</div>
+
+<main id="main">
+  <!-- ---------- Home ---------- -->
+  <section id="viewHome" class="view">
+    <div id="cards" class="cards"></div>
+
+    <div class="storage-cta" id="storageCta" hidden>
+      <div class="storage-cta-text">
+        <strong>احفظ الصوتيات للاستماع بدون إنترنت</strong>
+        <span id="storageCtaSub">لم تُحفَظ بعد</span>
+      </div>
+      <button id="ctaDownload" class="btn primary">تنزيل الكل</button>
+    </div>
+
+    <p class="foot">تُحفَظ الملفات في جهازك حفظًا دائمًا، ويعمل التطبيق كاملًا بدون إنترنت.</p>
+  </section>
+
+  <!-- ---------- Category detail ---------- -->
+  <section id="viewDetail" class="view" hidden>
+    <div class="detail-head">
+      <div id="detailGlyph" class="detail-glyph"></div>
+      <div>
+        <h2 id="detailTitle"></h2>
+        <p id="detailSub" class="muted"></p>
+      </div>
+    </div>
+
+    <div class="detail-actions">
+      <button id="playAllBtn" class="btn primary">تشغيل الكل</button>
+      <button id="catDownloadBtn" class="btn">حفظ للاستماع دون إنترنت</button>
+    </div>
+
+    <div id="counterWrap" class="counter" hidden>
+      <button id="counterBtn" class="counter-btn" aria-label="عدّاد التسبيح">
+        <span id="counterVal">٠</span>
+        <small id="counterTarget"></small>
+      </button>
+      <button id="counterReset" class="btn ghost small">تصفير</button>
+    </div>
+
+    <h3 class="section-label">المقاطع الصوتية</h3>
+    <ul id="trackList" class="tracks"></ul>
+
+    <h3 class="section-label" id="textLabel">النص</h3>
+    <p id="textNote" class="note" hidden></p>
+    <ol id="textList" class="texts"></ol>
+  </section>
+
+  <!-- ---------- Settings ---------- -->
+  <section id="viewSettings" class="view" hidden>
+    <h2 class="view-title">الإعدادات والتخزين</h2>
+
+    <div class="panel">
+      <div class="panel-row">
+        <div><strong>الصوتيات المحفوظة</strong><br><span id="cacheStat" class="muted">…</span></div>
+      </div>
+      <div class="progress" id="dlProgressWrap" hidden><div id="dlProgress" class="progress-bar"></div></div>
+      <div class="panel-actions">
+        <button id="downloadAllBtn" class="btn primary">تنزيل كل الصوتيات</button>
+        <button id="clearCacheBtn" class="btn danger">حذف الصوتيات المحفوظة</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-row">
+        <div><strong>التخزين الدائم</strong><br><span id="persistStat" class="muted">…</span></div>
+      </div>
+      <p class="muted small">التخزين الدائم يمنع النظام من حذف الملفات تلقائيًا عند امتلاء المساحة.</p>
+      <div class="panel-actions">
+        <button id="persistBtn" class="btn">تفعيل التخزين الدائم</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-row"><div><strong>تسجيلاتي المستوردة</strong><br><span id="importStat" class="muted">…</span></div></div>
+      <p class="muted small">يمكنك إضافة ملف صوتي خاص بك لأي مقطع من صفحة الذكر، ويُحفَظ في جهازك.</p>
+      <div class="panel-actions">
+        <button id="clearImportsBtn" class="btn danger">حذف التسجيلات المستوردة</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-row"><div><strong>المصادر</strong></div></div>
+      <ul class="sources">
+        <li>آية الكرسي — مشاري راشد العفاسي، <span dir="ltr">everyayah.com</span></li>
+        <li>تكبيرات العيد — <span dir="ltr">archive.org/details/takbirat.al3id</span></li>
+        <li>أذكار الصباح والمساء — سلمان العتيبي، <span dir="ltr">archive.org</span></li>
+        <li>كلمة التوحيد — نص فقط، بدون تسجيل مرفق</li>
+      </ul>
+    </div>
+
+    <p class="foot" id="verFoot"></p>
+  </section>
+</main>
+
+<!-- ---------- Player ---------- -->
+<div id="player" class="player" hidden>
+  <div class="player-top">
+    <div class="player-meta">
+      <div id="pTitle" class="p-title">—</div>
+      <div id="pSub" class="p-sub muted"></div>
+    </div>
+    <button id="pClose" class="icon-btn" aria-label="إغلاق المشغّل">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+
+  <input id="seek" class="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="موضع التشغيل">
+  <div class="times"><span id="tCur">٠:٠٠</span><span id="tDur">٠:٠٠</span></div>
+
+  <div class="controls">
+    <button id="pRepeat" class="icon-btn small" aria-label="تكرار" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 2l3 3-3 3"/><path d="M20 5H8a4 4 0 00-4 4v1"/><path d="M7 22l-3-3 3-3"/><path d="M4 19h12a4 4 0 004-4v-1"/></svg>
+    </button>
+    <button id="pPrev" class="icon-btn" aria-label="السابق">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l10 6-10 6z" fill="currentColor" stroke="none"/><path d="M18 5v14"/></svg>
+    </button>
+    <button id="pPlay" class="play-btn" aria-label="تشغيل"></button>
+    <button id="pNext" class="icon-btn" aria-label="التالي">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L8 12l10 6z" fill="currentColor" stroke="none"/><path d="M6 5v14"/></svg>
+    </button>
+    <button id="pRate" class="icon-btn small rate" aria-label="سرعة التشغيل">١×</button>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+<input id="filePick" type="file" accept="audio/*" hidden>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
