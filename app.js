@@ -1,4 +1,4 @@
-import { AZKAR, ALL_AUDIO } from './data.js';
+import { AZKAR, ALL_AUDIO, PRECACHE_AUDIO } from './data.js';
 
 const APP_VERSION = '2';
 const $ = (id) => document.getElementById(id);
@@ -406,10 +406,10 @@ async function cachedBytes() {
   return total;
 }
 
-async function downloadAll(onProgress) {
+async function downloadList(urls, onProgress) {
   const cache = await caches.open(AUDIO_CACHE);
   let done = 0;
-  for (const url of ALL_AUDIO) {
+  for (const url of urls) {
     try {
       if (!(await cache.match(url))) {
         const res = await fetch(url, { cache: 'reload' });
@@ -417,9 +417,23 @@ async function downloadAll(onProgress) {
       }
     } catch { /* keep going; the count reflects reality afterwards */ }
     done++;
-    onProgress?.(done, ALL_AUDIO.length);
+    onProgress?.(done, urls.length);
   }
   return done;
+}
+
+const downloadAll = (onProgress) => downloadList(ALL_AUDIO, onProgress);
+
+/** Cache anything the worker's install-time precache did not get.
+ *  `install` fires only once per worker version, so an install that was
+ *  interrupted or offline would otherwise never retry. */
+async function healPrecache() {
+  if (!('caches' in window) || !navigator.onLine) return;
+  const cache = await caches.open(AUDIO_CACHE);
+  const missing = [];
+  for (const url of PRECACHE_AUDIO) if (!(await cache.match(url))) missing.push(url);
+  if (!missing.length) return;
+  await downloadList(missing);
 }
 
 async function refreshHomeCta() {
@@ -629,6 +643,7 @@ window.addEventListener('hashchange', route);
     } catch { /* SW unavailable — app still works online */ }
   }
 
-  // The banner was painted before precaching finished, so re-evaluate.
-  refreshHomeCta().catch(() => {});
+  // Fill any gaps the worker left, then re-evaluate the banner (it was painted
+  // on boot while the cache was still empty).
+  healPrecache().catch(() => {}).finally(() => refreshHomeCta().catch(() => {}));
 })();
