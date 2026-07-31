@@ -5,7 +5,10 @@ audio stays on the device permanently — no network needed afterwards.
 
 The interface is in English; the dhikr itself is shown in Arabic.
 
-**Live:** https://akaban01.github.io/azkar-web/
+**Live:** https://zikr.sight2030.com/
+
+Served from GitHub Pages via the `CNAME` file, behind Cloudflare DNS. All paths in
+the app are relative, so it runs unchanged at a domain root or under a subpath.
 
 ## Contents
 
