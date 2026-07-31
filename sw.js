@@ -4,7 +4,7 @@
      AUDIO_CACHE  — unversioned and never purged on activate, so the ~20 MB of
                     downloaded recitations survive app updates. */
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL_CACHE = `azkar-shell-${VERSION}`;
 const AUDIO_CACHE = 'azkar-audio-v1';
 
@@ -20,35 +20,21 @@ const SHELL = [
   'icons/icon-512.png'
 ];
 
-// Precached on install. Deliberately excludes the hour-long takbeerat
-// (~70 MB) — that one is fetched on demand. Keep in sync with PRECACHE_AUDIO
-// in data.js.
-const AUDIO = [
-  'audio/eid-takbeerat.mp3',
-  'audio/ayatul-kursi.mp3',
-  'audio/kalima-tauheed.mp3',
-  'audio/azkar-sabah.mp3',
-  'audio/azkar-masa.mp3'
-];
-
 self.addEventListener('install', (event) => {
+  // Take over immediately, BEFORE any slow work. Calling this only after a
+  // large precache meant a slow or interrupted install never activated, leaving
+  // the previous worker in control and serving stale assets indefinitely.
+  self.skipWaiting();
+
   event.waitUntil((async () => {
     const shell = await caches.open(SHELL_CACHE);
     // addAll is atomic — one 404 would abort the install, so add individually.
     await Promise.all(SHELL.map((u) => shell.add(u).catch(() => {})));
-
-    // Pre-cache audio on install so a fresh install is offline-ready.
-    const audio = await caches.open(AUDIO_CACHE);
-    await Promise.all(AUDIO.map(async (u) => {
-      if (await audio.match(u)) return;
-      try {
-        const res = await fetch(u, { cache: 'reload' });
-        if (res.ok) await audio.put(u, res);
-      } catch { /* user can retry from Settings */ }
-    }));
-
-    self.skipWaiting();
   })());
+
+  // Audio is deliberately NOT precached here. It is tens of megabytes, which
+  // makes install slow and failure-prone; the page caches it via healPrecache()
+  // once it is running, and retries on every later visit.
 });
 
 self.addEventListener('activate', (event) => {
