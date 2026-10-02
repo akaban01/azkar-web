@@ -4,7 +4,7 @@
      AUDIO_CACHE  — unversioned and never purged on activate, so the ~20 MB of
                     downloaded recitations survive app updates. */
 
-const VERSION = 'v3';
+const VERSION = 'v4';
 const SHELL_CACHE = `azkar-shell-${VERSION}`;
 const AUDIO_CACHE = 'azkar-audio-v1';
 

@@ -17,6 +17,7 @@ the app are relative, so it runs unchanged at a domain root or under a subpath.
 | Eid Takbeerat | ✅ 1 hour + 1 min | Mishary Rashid Alafasy |
 | Ayatul Kursi (2:255) | ✅ 52 s | Mishary Rashid Alafasy |
 | 4th Kalima (Tauheed) | ✅ 52 s | islamicsurah.com |
+| Durood Ibrahimi | ⏳ text only — import audio | Mishary Rashid Alafasy (pending) |
 | Morning Azkar | ✅ 10:35 | Salman Al-Otaibi |
 | Evening Azkar | ✅ 9:49 | Salman Al-Otaibi |
 

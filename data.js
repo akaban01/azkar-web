@@ -72,6 +72,33 @@ export const AZKAR = [
   },
 
   {
+    id: 'durood-ibrahimi',
+    title: 'Durood Ibrahimi',
+    subtitle: 'Mishary Rashid Alafasy',
+    glyph: '۞',
+    accent: 'rose',
+    counter: null,
+    tracks: [
+      // No verified Alafasy recording is bundled yet — import one from the track
+      // screen until it is added here.
+      { id: 'durood-1', title: 'Durood Ibrahimi', src: null }
+    ],
+    text: [
+      {
+        note: 'Recited in the final tashahhud of every prayer.',
+        body:
+          'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، ' +
+          'إِنَّكَ حَمِيدٌ مَجِيدٌ.'
+      },
+      {
+        body:
+          'اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ، كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ، ' +
+          'إِنَّكَ حَمِيدٌ مَجِيدٌ.'
+      }
+    ]
+  },
+
+  {
     id: 'azkar-sabah',
     title: 'Morning Azkar',
     subtitle: 'Salman Al-Otaibi',
