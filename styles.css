@@ -19,8 +19,12 @@
 .accent-violet  { --a1:#a78bfa; --a2:#6d4bd6; }
 .accent-sky     { --a1:#56b6f0; --a2:#2071ad; }
 .accent-indigo  { --a1:#8093f0; --a2:#4453b8; }
+.accent-rose    { --a1:#f472b6; --a2:#be3a83; }
 
 * { box-sizing: border-box; }
+
+/* Component display rules (e.g. .counter's flex) would otherwise override the attribute. */
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
