@@ -79,9 +79,7 @@ export const AZKAR = [
     accent: 'rose',
     counter: null,
     tracks: [
-      // No verified Alafasy recording is bundled yet — import one from the track
-      // screen until it is added here.
-      { id: 'durood-1', title: 'Durood Ibrahimi', src: null }
+      { id: 'durood-1', title: 'Durood Ibrahimi', src: 'audio/durood-ibrahimi.mp3' }
     ],
     text: [
       {

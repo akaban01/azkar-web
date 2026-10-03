@@ -17,7 +17,7 @@ the app are relative, so it runs unchanged at a domain root or under a subpath.
 | Eid Takbeerat | ✅ 1 hour + 1 min | Mishary Rashid Alafasy |
 | Ayatul Kursi (2:255) | ✅ 52 s | Mishary Rashid Alafasy |
 | 4th Kalima (Tauheed) | ✅ 52 s | islamicsurah.com |
-| Durood Ibrahimi | ⏳ text only — import audio | Mishary Rashid Alafasy (pending) |
+| Durood Ibrahimi | ✅ 44 s | Mishary Rashid Alafasy |
 | Morning Azkar | ✅ 10:35 | Salman Al-Otaibi |
 | Evening Azkar | ✅ 9:49 | Salman Al-Otaibi |
 
@@ -73,8 +73,10 @@ screen.
 - Eid Takbeerat (1 hour) — Alafasy, via [archive.org](https://archive.org/details/20240528_20240528_1151)
 - Morning & Evening Azkar — Salman Al-Otaibi, via [archive.org](https://archive.org)
 - 4th Kalima — islamicsurah.com
+- Durood Ibrahimi — Alafasy, one recitation cut from a looped re-upload at
+  [soundcloud.com/m-muizz](https://soundcloud.com/m-muizz/durood-e-ibrahim-100-times)
 
-**Note on rights.** The archive.org uploads carry no explicit licence. The 4th Kalima
+**Note on rights.** The archive.org and SoundCloud uploads carry no explicit licence. The 4th Kalima
 file comes from islamicsurah.com, which asserts site-wide copyright and grants no
 explicit reuse permission — it is the least clearly licensed item here and the most
 likely candidate for replacement with your own recording. If you are a rights holder
