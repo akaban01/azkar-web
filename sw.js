@@ -4,7 +4,7 @@
      AUDIO_CACHE  — unversioned and never purged on activate, so the ~20 MB of
                     downloaded recitations survive app updates. */
 
-const VERSION = 'v5';
+const VERSION = 'v6';
 const SHELL_CACHE = `azkar-shell-${VERSION}`;
 const AUDIO_CACHE = 'azkar-audio-v1';
 
@@ -31,7 +31,12 @@ self.addEventListener('install', (event) => {
     // addAll is atomic — one 404 would abort the install, so add individually.
     // `reload` skips the browser HTTP cache, which the host lets hold JS for
     // hours — otherwise a new worker can install the previous deploy's files.
-    await Promise.all(SHELL.map((u) => shell.add(new Request(u, { cache: 'reload' })).catch(() => {})));
+    await Promise.all(SHELL.map(async (u) => {
+      try {
+        const res = await fromOrigin(u, 'reload');
+        if (res.ok) await shell.put(u, revalidating(res));
+      } catch { /* retried by the fetch handler on the next load */ }
+    }));
   })());
 
   // Audio is deliberately NOT precached here. It is tens of megabytes, which
@@ -92,7 +97,7 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(SHELL_CACHE);
     try {
-      const fresh = revalidating(await fetch(req, { cache: 'no-cache' }));
+      const fresh = revalidating(await fromOrigin(req.url, 'no-cache'));
       if (fresh.ok) cache.put(req, fresh.clone());
       return fresh;
     } catch {
@@ -100,6 +105,16 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
+
+/** Fetch a shell file past the CDN. Cloudflare caches JS at its edge and ignores
+ *  the browser's no-cache, so for several minutes after a deploy some requests
+ *  still got the previous data.js. A per-minute query parameter gives each
+ *  minute its own edge cache key; callers keep caching under the plain URL. */
+function fromOrigin(url, cache) {
+  const u = new URL(url, self.location.href);
+  u.searchParams.set('v', String(Math.floor(Date.now() / 60000)));
+  return fetch(u, { cache });
+}
 
 /** Copy of `res` marked Cache-Control: no-cache. Browsers keep subresources in
  *  memory across reloads while the response says they are fresh, never asking
