@@ -4,7 +4,7 @@
      AUDIO_CACHE  — unversioned and never purged on activate, so the ~20 MB of
                     downloaded recitations survive app updates. */
 
-const VERSION = 'v4';
+const VERSION = 'v5';
 const SHELL_CACHE = `azkar-shell-${VERSION}`;
 const AUDIO_CACHE = 'azkar-audio-v1';
 
@@ -29,7 +29,9 @@ self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const shell = await caches.open(SHELL_CACHE);
     // addAll is atomic — one 404 would abort the install, so add individually.
-    await Promise.all(SHELL.map((u) => shell.add(u).catch(() => {})));
+    // `reload` skips the browser HTTP cache, which the host lets hold JS for
+    // hours — otherwise a new worker can install the previous deploy's files.
+    await Promise.all(SHELL.map((u) => shell.add(new Request(u, { cache: 'reload' })).catch(() => {})));
   })());
 
   // Audio is deliberately NOT precached here. It is tens of megabytes, which
@@ -84,10 +86,13 @@ self.addEventListener('fetch', (event) => {
   // Stale-while-revalidate would be faster, but it can pair a freshly deployed
   // index.html with a stale app.js for one load. These files are small, and
   // the cache still covers the offline case.
+  // The host sends max-age=14400 for JS, which kept the old data.js on screen
+  // for hours after a deploy. `no-cache` revalidates instead of trusting the HTTP
+  // cache, and revalidating() stops the page's in-memory cache reusing the file.
   event.respondWith((async () => {
     const cache = await caches.open(SHELL_CACHE);
     try {
-      const fresh = await fetch(req);
+      const fresh = revalidating(await fetch(req, { cache: 'no-cache' }));
       if (fresh.ok) cache.put(req, fresh.clone());
       return fresh;
     } catch {
@@ -95,6 +100,16 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
+
+/** Copy of `res` marked Cache-Control: no-cache. Browsers keep subresources in
+ *  memory across reloads while the response says they are fresh, never asking
+ *  this worker again — so the host's long max-age would outlive a deploy. */
+function revalidating(res) {
+  if (res.type !== 'basic' && res.type !== 'default') return res;
+  const headers = new Headers(res.headers);
+  headers.set('Cache-Control', 'no-cache');
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
+}
 
 /** Serve audio from cache, honouring HTTP Range so seeking works offline. */
 async function serveAudio(req, url) {
